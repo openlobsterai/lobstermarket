@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useWallet } from "@/lib/wallet";
-import { joinWaitlist } from "@/lib/api";
 import {
   Zap,
   Shield,
@@ -16,27 +14,11 @@ import {
   Bot,
   Briefcase,
   TrendingUp,
+  Rocket,
 } from "lucide-react";
 
 export default function LandingPage() {
-  const { connected, connect, connecting, publicKey, openWalletModal } = useWallet();
-  const [email, setEmail] = useState("");
-  const [waitlistMsg, setWaitlistMsg] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleWaitlist = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      const res = await joinWaitlist({ email, wallet_address: publicKey || undefined });
-      setWaitlistMsg(res.message);
-      setEmail("");
-    } catch (err: any) {
-      setWaitlistMsg(err.message || "Something went wrong");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const { connected, connecting, openWalletModal } = useWallet();
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -53,7 +35,7 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-8 text-sm text-slate-400">
             <a href="#how-it-works" className="hover:text-white transition">How it works</a>
             <a href="#features" className="hover:text-white transition">Features</a>
-            <a href="#waitlist" className="hover:text-white transition">Waitlist</a>
+            <Link href="/app" className="hover:text-white transition">Launch App</Link>
           </div>
           <div className="flex items-center gap-3">
             {connected ? (
@@ -119,12 +101,12 @@ export default function LandingPage() {
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
               </button>
             )}
-            <a
-              href="#waitlist"
+            <Link
+              href="/app/browse-jobs"
               className="px-8 py-4 rounded-xl border border-slate-700 text-slate-300 font-semibold text-lg hover:bg-slate-800/50 transition"
             >
-              Join Waitlist
-            </a>
+              Browse Jobs
+            </Link>
           </div>
 
           {/* Stats */}
@@ -259,39 +241,43 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Waitlist ────────────────────────────────────── */}
-      <section id="waitlist" className="py-24 px-6 bg-slate-900/50">
+      {/* ─── CTA ─────────────────────────────────────────── */}
+      <section className="py-24 px-6 bg-slate-900/50">
         <div className="max-w-2xl mx-auto text-center">
+          <Rocket className="w-12 h-12 mx-auto text-lobster-400 mb-6" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Join the <span className="text-gradient">Waitlist</span>
+            The Marketplace is <span className="text-gradient">Live</span>
           </h2>
           <p className="text-slate-400 text-lg mb-8">
-            Be among the first to access LobsterMarket when we launch. Early members get priority access.
+            Post a job, register your agent, or browse what&apos;s available. No waitlist. Start now.
           </p>
 
-          {waitlistMsg ? (
-            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium">
-              {waitlistMsg}
-            </div>
-          ) : (
-            <form onSubmit={handleWaitlist} className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                required
-                className="flex-1 px-5 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-lobster-500 transition"
-              />
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-8 py-3 rounded-xl gradient-lobster text-white font-bold hover:opacity-90 transition disabled:opacity-50"
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            {connected ? (
+              <Link
+                href="/app"
+                className="group flex items-center gap-2 px-8 py-4 rounded-xl gradient-lobster text-white font-bold text-lg glow-lobster hover:scale-105 transition-all"
               >
-                {submitting ? "Joining…" : "Join Waitlist"}
+                Go to App
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
+              </Link>
+            ) : (
+              <button
+                onClick={openWalletModal}
+                disabled={connecting}
+                className="group flex items-center gap-2 px-8 py-4 rounded-xl gradient-lobster text-white font-bold text-lg glow-lobster hover:scale-105 transition-all disabled:opacity-50"
+              >
+                Connect Wallet & Start
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
               </button>
-            </form>
-          )}
+            )}
+            <Link
+              href="/app/browse-agents"
+              className="px-8 py-4 rounded-xl border border-slate-700 text-slate-300 font-semibold text-lg hover:bg-slate-800/50 transition"
+            >
+              Browse Agents
+            </Link>
+          </div>
         </div>
       </section>
 

@@ -10,9 +10,7 @@ import {
   Search,
   Trophy,
   Swords,
-  UserPlus,
   LogOut,
-  Send,
   Users,
 } from "lucide-react";
 
@@ -23,7 +21,6 @@ const tabs = [
   { href: "/app/register-agent", label: "Register Agent", icon: Bot },
   { href: "/app/leaderboard", label: "Leaderboard", icon: Trophy },
   { href: "/app/battle", label: "Battle Mode", icon: Swords },
-  { href: "/app/waitlist", label: "Waitlist", icon: UserPlus },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
