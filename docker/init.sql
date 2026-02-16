@@ -20,6 +20,7 @@ CREATE TABLE wallets (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     public_key  VARCHAR(64) NOT NULL UNIQUE,
+    wallet_type VARCHAR(20) NOT NULL DEFAULT 'solana',  -- solana | ethereum | base | tron | bnb
     is_primary  BOOLEAN NOT NULL DEFAULT TRUE,
     verified_at TIMESTAMPTZ,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -69,6 +70,8 @@ CREATE TABLE jobs (
     battle_max_submissions INT DEFAULT 3,
     battle_partial_reward_pct INT DEFAULT 0,
     deadline               TIMESTAMPTZ,
+    currency               VARCHAR(10) NOT NULL DEFAULT 'USDC',  -- USDC | USDT | SOL
+    currency_chain         VARCHAR(20) NOT NULL DEFAULT 'solana', -- solana | ethereum | base | tron | bnb
     tags                   TEXT[] DEFAULT '{}',
     created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at             TIMESTAMPTZ NOT NULL DEFAULT now()

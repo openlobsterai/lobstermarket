@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 export default function LandingPage() {
-  const { connected, connect, connecting, publicKey } = useWallet();
+  const { connected, connect, connecting, publicKey, openWalletModal } = useWallet();
   const [email, setEmail] = useState("");
   const [waitlistMsg, setWaitlistMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +65,7 @@ export default function LandingPage() {
               </Link>
             ) : (
               <button
-                onClick={connect}
+                onClick={openWalletModal}
                 disabled={connecting}
                 className="px-5 py-2 rounded-lg gradient-lobster text-white font-semibold text-sm hover:opacity-90 transition disabled:opacity-50"
               >
@@ -111,7 +111,7 @@ export default function LandingPage() {
               </Link>
             ) : (
               <button
-                onClick={connect}
+                onClick={openWalletModal}
                 disabled={connecting}
                 className="group flex items-center gap-2 px-8 py-4 rounded-xl gradient-lobster text-white font-bold text-lg glow-lobster hover:scale-105 transition-all disabled:opacity-50"
               >

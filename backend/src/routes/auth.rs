@@ -4,7 +4,7 @@ use rand::Rng;
 use redis::AsyncCommands;
 use serde::Deserialize;
 
-use crate::auth::wallet::{build_sign_message, verify_solana_signature};
+use crate::auth::wallet::{build_sign_message, detect_wallet_type, verify_wallet_signature};
 use crate::auth::jwt::create_token;
 use crate::error::{AppError, AppResult};
 use crate::models::{AuthResponse, NonceResponse, User, VerifyWalletReq};
@@ -15,7 +15,7 @@ pub struct NonceQuery {
     pub wallet: String,
 }
 
-/// GET /api/auth/nonce?wallet=<pubkey>
+/// GET /api/auth/nonce?wallet=<pubkey_or_address>
 pub async fn get_nonce(
     State(state): State<AppState>,
     Query(q): Query<NonceQuery>,
@@ -68,8 +68,11 @@ pub async fn verify_wallet(
         return Err(AppError::BadRequest("Message mismatch".into()));
     }
 
-    // 3. Verify Ed25519 signature
-    verify_solana_signature(&body.wallet, &body.signature, &body.message)?;
+    // 3. Detect wallet type and verify signature
+    let wallet_type = body.wallet_type.as_deref()
+        .unwrap_or_else(|| detect_wallet_type(&body.wallet));
+
+    verify_wallet_signature(wallet_type, &body.wallet, &body.signature, &body.message)?;
 
     // 4. Find or create user + wallet
     let existing_wallet = sqlx::query_as::<_, crate::models::Wallet>(
@@ -86,18 +89,25 @@ pub async fn verify_wallet(
             .await?
     } else {
         // Create new user + wallet
+        let short_name = if body.wallet.starts_with("0x") {
+            format!("{}…{}", &body.wallet[..6], &body.wallet[body.wallet.len()-4..])
+        } else {
+            format!("{}…{}", &body.wallet[..4], &body.wallet[body.wallet.len()-4..])
+        };
+
         let user = sqlx::query_as::<_, User>(
             "INSERT INTO users (display_name) VALUES ($1) RETURNING *"
         )
-        .bind(format!("{}…{}", &body.wallet[..4], &body.wallet[body.wallet.len()-4..]))
+        .bind(&short_name)
         .fetch_one(&state.db)
         .await?;
 
         sqlx::query(
-            "INSERT INTO wallets (user_id, public_key, verified_at) VALUES ($1, $2, now())"
+            "INSERT INTO wallets (user_id, public_key, wallet_type, verified_at) VALUES ($1, $2, $3, now())"
         )
         .bind(user.id)
         .bind(&body.wallet)
+        .bind(wallet_type)
         .execute(&state.db)
         .await?;
 
@@ -106,7 +116,7 @@ pub async fn verify_wallet(
             "INSERT INTO audit_logs (user_id, action, metadata) VALUES ($1, 'user_created', $2)"
         )
         .bind(user.id)
-        .bind(serde_json::json!({"wallet": &body.wallet}))
+        .bind(serde_json::json!({"wallet": &body.wallet, "wallet_type": wallet_type}))
         .execute(&state.db)
         .await?;
 
@@ -129,6 +139,3 @@ pub async fn verify_wallet(
 
     Ok(Json(AuthResponse { token, user }))
 }
-
-
-

@@ -125,6 +125,60 @@ pub async fn my_agents(
     Ok(Json(agents))
 }
 
+/// POST /api/agents/:id/deactivate — hide/deactivate an agent (owner only)
+pub async fn deactivate_agent(
+    State(state): State<AppState>,
+    AuthUser(claims): AuthUser,
+    Path(id): Path<Uuid>,
+) -> AppResult<Json<Agent>> {
+    let agent = sqlx::query_as::<_, Agent>(
+        "SELECT * FROM agents WHERE id = $1 AND owner_id = $2"
+    )
+    .bind(id)
+    .bind(claims.sub)
+    .fetch_optional(&state.db)
+    .await?
+    .ok_or_else(|| AppError::NotFound("Agent not found or not yours".into()))?;
+
+    if agent.status == "inactive" {
+        return Err(AppError::BadRequest("Agent is already inactive".into()));
+    }
+
+    let updated = sqlx::query_as::<_, Agent>(
+        "UPDATE agents SET status = 'inactive', updated_at = now() WHERE id = $1 RETURNING *"
+    )
+    .bind(id)
+    .fetch_one(&state.db)
+    .await?;
+
+    Ok(Json(updated))
+}
+
+/// POST /api/agents/:id/activate — reactivate an agent (owner only)
+pub async fn activate_agent(
+    State(state): State<AppState>,
+    AuthUser(claims): AuthUser,
+    Path(id): Path<Uuid>,
+) -> AppResult<Json<Agent>> {
+    let _agent = sqlx::query_as::<_, Agent>(
+        "SELECT * FROM agents WHERE id = $1 AND owner_id = $2"
+    )
+    .bind(id)
+    .bind(claims.sub)
+    .fetch_optional(&state.db)
+    .await?
+    .ok_or_else(|| AppError::NotFound("Agent not found or not yours".into()))?;
+
+    let updated = sqlx::query_as::<_, Agent>(
+        "UPDATE agents SET status = 'active', updated_at = now() WHERE id = $1 RETURNING *"
+    )
+    .bind(id)
+    .fetch_one(&state.db)
+    .await?;
+
+    Ok(Json(updated))
+}
+
 // ═══════════════════════════════════════════════════════════════
 // AGENT PROFILE — full profile with capabilities, work history, reviews
 // ═══════════════════════════════════════════════════════════════

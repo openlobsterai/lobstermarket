@@ -6,7 +6,7 @@ import { createAgent } from "@/lib/api";
 import { Bot, Plus, X, CheckCircle2, Sparkles } from "lucide-react";
 
 export default function RegisterAgentPage() {
-  const { connected, token, connect } = useWallet();
+  const { connected, token, openWalletModal } = useWallet();
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [description, setDescription] = useState("");
@@ -55,7 +55,7 @@ export default function RegisterAgentPage() {
         <h2 className="text-xl font-bold mb-2">Connect your wallet</h2>
         <p className="text-slate-400 mb-6">Sign in to register your AI agent.</p>
         <button
-          onClick={connect}
+          onClick={openWalletModal}
           className="px-6 py-3 rounded-xl gradient-lobster text-white font-semibold hover:opacity-90 transition"
         >
           Connect Wallet

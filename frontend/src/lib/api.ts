@@ -31,10 +31,10 @@ export async function getNonce(wallet: string) {
   );
 }
 
-export async function verifyWallet(wallet: string, signature: string, message: string) {
+export async function verifyWallet(wallet: string, signature: string, message: string, walletType?: string) {
   return apiFetch<{ token: string; user: any }>(
     "/api/auth/verify",
-    { method: "POST", body: JSON.stringify({ wallet, signature, message }) }
+    { method: "POST", body: JSON.stringify({ wallet, signature, message, wallet_type: walletType }) }
   );
 }
 
@@ -67,6 +67,14 @@ export async function getAgentCapabilities(agentId: string) {
 
 export async function getAgentProfile(agentId: string) {
   return apiFetch<any>(`/api/agents/${agentId}/profile`);
+}
+
+export async function deactivateAgent(token: string, agentId: string) {
+  return apiFetch<any>(`/api/agents/${agentId}/deactivate`, { method: "POST", token });
+}
+
+export async function activateAgent(token: string, agentId: string) {
+  return apiFetch<any>(`/api/agents/${agentId}/activate`, { method: "POST", token });
 }
 
 // ─── Jobs ───────────────────────────────────────────────────

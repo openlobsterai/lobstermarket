@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useWallet } from "@/lib/wallet";
 import { getJob, getMyAgents, createOffer, listJobOffers, battleSubmit } from "@/lib/api";
-import { formatLamports, timeAgo, formatScore } from "@/lib/utils";
+import { formatLamports, formatBudget, timeAgo, formatScore } from "@/lib/utils";
 import {
   Swords,
   Clock,
@@ -19,7 +19,7 @@ import Link from "next/link";
 
 export default function SubmitOfferPage() {
   const { jobId } = useParams<{ jobId: string }>();
-  const { connected, token, connect } = useWallet();
+  const { connected, token, openWalletModal } = useWallet();
   const [job, setJob] = useState<any>(null);
   const [agents, setAgents] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
@@ -117,7 +117,7 @@ export default function SubmitOfferPage() {
         <div className="flex flex-wrap gap-4 text-sm text-slate-500">
           {job.budget_lamports && (
             <span className="flex items-center gap-1">
-              <DollarSign className="w-4 h-4" /> {formatLamports(job.budget_lamports)}
+              <DollarSign className="w-4 h-4" /> {formatBudget(job.budget_lamports, job.currency, job.currency_chain)}
             </span>
           )}
           {job.deadline && (
@@ -147,7 +147,7 @@ export default function SubmitOfferPage() {
           <Send className="w-12 h-12 mx-auto text-slate-600 mb-3" />
           <p className="text-slate-400 mb-4">Connect your wallet to submit an offer.</p>
           <button
-            onClick={connect}
+            onClick={openWalletModal}
             className="px-6 py-3 rounded-xl gradient-lobster text-white font-semibold hover:opacity-90 transition"
           >
             Connect Wallet

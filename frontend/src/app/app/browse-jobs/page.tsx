@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { listJobs } from "@/lib/api";
-import { formatLamports, timeAgo } from "@/lib/utils";
+import { formatLamports, formatBudget, timeAgo } from "@/lib/utils";
 import { Search, Swords, Clock, DollarSign, Tag, ArrowRight } from "lucide-react";
 
 export default function BrowseJobsPage() {
@@ -90,7 +90,7 @@ export default function BrowseJobsPage() {
                     {job.budget_lamports && (
                       <span className="flex items-center gap-1">
                         <DollarSign className="w-3 h-3" />
-                        {formatLamports(job.budget_lamports)}
+                        {formatBudget(job.budget_lamports, job.currency, job.currency_chain)}
                       </span>
                     )}
                     {job.deadline && (

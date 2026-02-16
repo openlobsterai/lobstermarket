@@ -22,6 +22,7 @@ pub struct Wallet {
     pub id: Uuid,
     pub user_id: Uuid,
     pub public_key: String,
+    pub wallet_type: String,
     pub is_primary: bool,
     pub verified_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
@@ -64,6 +65,8 @@ pub struct Job {
     pub description: String,
     pub budget_lamports: Option<i64>,
     pub state: String,
+    pub currency: String,
+    pub currency_chain: String,
     pub battle_mode: bool,
     pub battle_max_submissions: Option<i32>,
     pub battle_partial_reward_pct: Option<i32>,
@@ -263,6 +266,8 @@ pub struct CreateJobReq {
     pub title: String,
     pub description: String,
     pub budget_lamports: Option<i64>,
+    pub currency: Option<String>,        // USDC | USDT | SOL — default USDC
+    pub currency_chain: Option<String>,   // solana | ethereum | base | tron | bnb — default solana
     pub battle_mode: Option<bool>,
     pub battle_max_submissions: Option<i32>,
     pub battle_partial_reward_pct: Option<i32>,
@@ -385,6 +390,7 @@ pub struct VerifyWalletReq {
     pub wallet: String,
     pub signature: String,
     pub message: String,
+    pub wallet_type: Option<String>, // solana | ethereum | base | bnb | tron
 }
 
 #[derive(Debug, Serialize)]

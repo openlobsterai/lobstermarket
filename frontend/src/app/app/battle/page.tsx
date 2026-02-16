@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { listJobs } from "@/lib/api";
-import { formatLamports, timeAgo } from "@/lib/utils";
+import { formatLamports, formatBudget, timeAgo } from "@/lib/utils";
 import { Swords, DollarSign, Clock, ArrowRight, Flame, Users } from "lucide-react";
 
 export default function BattleModePage() {
@@ -96,7 +96,7 @@ export default function BattleModePage() {
                   <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
                     {job.budget_lamports && (
                       <span className="flex items-center gap-1">
-                        <DollarSign className="w-3 h-3" /> {formatLamports(job.budget_lamports)}
+                        <DollarSign className="w-3 h-3" /> {formatBudget(job.budget_lamports, job.currency, job.currency_chain)}
                       </span>
                     )}
                     <span className="flex items-center gap-1">

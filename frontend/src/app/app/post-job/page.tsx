@@ -3,13 +3,24 @@
 import { useState } from "react";
 import { useWallet } from "@/lib/wallet";
 import { createJob, publishJob } from "@/lib/api";
-import { Briefcase, Plus, X, Swords, CheckCircle2 } from "lucide-react";
+import { Briefcase, Plus, X, Swords, CheckCircle2, Coins } from "lucide-react";
+import { toSmallestUnit } from "@/lib/utils";
+
+const CURRENCY_OPTIONS = [
+  { currency: "USDC", chain: "solana", label: "USDC on Solana", default: true },
+  { currency: "USDT", chain: "ethereum", label: "USDT on Ethereum" },
+  { currency: "USDT", chain: "base", label: "USDT on Base" },
+  { currency: "USDT", chain: "tron", label: "USDT on Tron" },
+  { currency: "SOL", chain: "solana", label: "SOL (native)" },
+];
 
 export default function PostJobPage() {
-  const { connected, token, connect } = useWallet();
+  const { connected, token, openWalletModal } = useWallet();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [budgetSol, setBudgetSol] = useState("");
+  const [currency, setCurrency] = useState("USDC");
+  const [currencyChain, setCurrencyChain] = useState("solana");
   const [battleMode, setBattleMode] = useState(false);
   const [battleMax, setBattleMax] = useState("3");
   const [tags, setTags] = useState<string[]>([]);
@@ -41,11 +52,15 @@ export default function PostJobPage() {
     setError("");
 
     try {
-      const budgetLamports = budgetSol ? Math.round(parseFloat(budgetSol) * 1_000_000_000) : undefined;
+      const budgetLamports = budgetSol
+        ? toSmallestUnit(parseFloat(budgetSol), currency)
+        : undefined;
       const job = await createJob(token, {
         title,
         description,
         budget_lamports: budgetLamports,
+        currency,
+        currency_chain: currencyChain,
         battle_mode: battleMode,
         battle_max_submissions: battleMode ? parseInt(battleMax) : undefined,
         tags: tags.length > 0 ? tags : undefined,
@@ -71,7 +86,7 @@ export default function PostJobPage() {
         <h2 className="text-xl font-bold mb-2">Connect your wallet</h2>
         <p className="text-slate-400 mb-6">You need to sign in to post a job.</p>
         <button
-          onClick={connect}
+          onClick={openWalletModal}
           className="px-6 py-3 rounded-xl gradient-lobster text-white font-semibold hover:opacity-90 transition"
         >
           Connect Wallet
@@ -137,16 +152,50 @@ export default function PostJobPage() {
           />
         </div>
 
+        {/* Currency */}
+        <div>
+          <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+            <Coins className="w-4 h-4 text-ocean-400" /> Payment Currency
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {CURRENCY_OPTIONS.map((opt) => {
+              const selected = currency === opt.currency && currencyChain === opt.chain;
+              return (
+                <button
+                  key={`${opt.currency}-${opt.chain}`}
+                  type="button"
+                  onClick={() => {
+                    setCurrency(opt.currency);
+                    setCurrencyChain(opt.chain);
+                  }}
+                  className={`px-3 py-2.5 rounded-lg text-sm font-medium transition border ${
+                    selected
+                      ? "bg-ocean-500/10 border-ocean-500/30 text-ocean-400"
+                      : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+                  }`}
+                >
+                  {opt.label}
+                  {opt.default && !selected && (
+                    <span className="ml-1 text-xs text-slate-600">(default)</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Budget */}
         <div>
-          <label className="block text-sm font-medium mb-2">Budget (SOL)</label>
+          <label className="block text-sm font-medium mb-2">
+            Budget ({currency})
+          </label>
           <input
             type="number"
-            step="0.001"
+            step={currency === "SOL" ? "0.001" : "0.01"}
             min="0"
             value={budgetSol}
             onChange={(e) => setBudgetSol(e.target.value)}
-            placeholder="0.5"
+            placeholder={currency === "SOL" ? "0.5" : "50.00"}
             className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-lobster-500 transition"
           />
         </div>

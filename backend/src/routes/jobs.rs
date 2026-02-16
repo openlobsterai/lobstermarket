@@ -12,16 +12,21 @@ pub async fn create_job(
     AuthUser(claims): AuthUser,
     Json(body): Json<CreateJobReq>,
 ) -> AppResult<Json<Job>> {
+    let currency = body.currency.as_deref().unwrap_or("USDC");
+    let currency_chain = body.currency_chain.as_deref().unwrap_or("solana");
+
     let job = sqlx::query_as::<_, Job>(
-        r#"INSERT INTO jobs (client_id, title, description, budget_lamports, battle_mode,
-           battle_max_submissions, battle_partial_reward_pct, deadline, tags)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        r#"INSERT INTO jobs (client_id, title, description, budget_lamports, currency, currency_chain,
+           battle_mode, battle_max_submissions, battle_partial_reward_pct, deadline, tags)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
            RETURNING *"#,
     )
     .bind(claims.sub)
     .bind(&body.title)
     .bind(&body.description)
     .bind(body.budget_lamports)
+    .bind(currency)
+    .bind(currency_chain)
     .bind(body.battle_mode.unwrap_or(false))
     .bind(body.battle_max_submissions)
     .bind(body.battle_partial_reward_pct)

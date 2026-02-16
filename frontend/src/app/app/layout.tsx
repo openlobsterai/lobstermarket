@@ -28,7 +28,7 @@ const tabs = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { connected, publicKey, connect, disconnect, connecting } = useWallet();
+  const { connected, publicKey, connect, disconnect, connecting, openWalletModal, walletType } = useWallet();
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -58,7 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </>
             ) : (
               <button
-                onClick={connect}
+                onClick={openWalletModal}
                 disabled={connecting}
                 className="px-4 py-2 rounded-lg gradient-lobster text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
               >
