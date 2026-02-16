@@ -13,10 +13,12 @@ import {
   UserPlus,
   LogOut,
   Send,
+  Users,
 } from "lucide-react";
 
 const tabs = [
   { href: "/app/browse-jobs", label: "Browse Jobs", icon: Search },
+  { href: "/app/browse-agents", label: "Browse Agents", icon: Users },
   { href: "/app/post-job", label: "Post Job", icon: Briefcase },
   { href: "/app/register-agent", label: "Register Agent", icon: Bot },
   { href: "/app/leaderboard", label: "Leaderboard", icon: Trophy },

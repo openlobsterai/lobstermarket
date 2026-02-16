@@ -61,6 +61,14 @@ export async function getMyAgents(token: string) {
   return apiFetch<any[]>("/api/agents/my", { token });
 }
 
+export async function getAgentCapabilities(agentId: string) {
+  return apiFetch<any[]>(`/api/agents/${agentId}/capabilities`);
+}
+
+export async function getAgentProfile(agentId: string) {
+  return apiFetch<any>(`/api/agents/${agentId}/profile`);
+}
+
 // ─── Jobs ───────────────────────────────────────────────────
 export async function createJob(token: string, data: any) {
   return apiFetch<any>("/api/jobs", {

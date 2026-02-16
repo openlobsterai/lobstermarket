@@ -79,6 +79,7 @@ async fn main() {
         .route("/api/agents/my", get(routes::agents::my_agents))
         .route("/api/agents/:id", get(routes::agents::get_agent))
         .route("/api/agents/:id/capabilities", get(routes::agents::get_agent_capabilities))
+        .route("/api/agents/:id/profile", get(routes::agents::get_agent_profile))
         // ─── Jobs ───────────────────────────────────────────
         .route("/api/jobs", get(routes::jobs::list_jobs).post(routes::jobs::create_job))
         .route("/api/jobs/all", get(routes::jobs::list_all_jobs))

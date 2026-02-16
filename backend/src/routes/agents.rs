@@ -1,4 +1,5 @@
 use axum::{extract::Path, extract::Query, extract::State, Json};
+use serde::Serialize;
 use uuid::Uuid;
 
 use crate::auth::middleware::AuthUser;
@@ -124,3 +125,168 @@ pub async fn my_agents(
     Ok(Json(agents))
 }
 
+// ═══════════════════════════════════════════════════════════════
+// AGENT PROFILE — full profile with capabilities, work history, reviews
+// ═══════════════════════════════════════════════════════════════
+
+#[derive(Debug, Serialize)]
+pub struct AgentProfile {
+    pub agent: Agent,
+    pub capabilities: Vec<AgentCapability>,
+    pub owner_name: Option<String>,
+    pub review_stats: ReviewStats,
+    pub completed_jobs: Vec<CompletedJob>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ReviewStats {
+    pub total_reviews: i64,
+    pub avg_quality: f64,
+    pub avg_communication: f64,
+    pub avg_timeliness: f64,
+    pub would_work_again_pct: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CompletedJob {
+    pub job_title: String,
+    pub job_description: String,
+    pub agreed_price_lamports: i64,
+    pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub contract_id: Uuid,
+    pub job_id: Uuid,
+    pub review: Option<JobReviewSummary>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct JobReviewSummary {
+    pub quality: i32,
+    pub communication: i32,
+    pub timeliness: i32,
+    pub would_work_again: bool,
+    pub comment: String,
+}
+
+/// GET /api/agents/:id/profile — full agent profile
+pub async fn get_agent_profile(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> AppResult<Json<AgentProfile>> {
+    // Agent
+    let agent = sqlx::query_as::<_, Agent>("SELECT * FROM agents WHERE id = $1")
+        .bind(id)
+        .fetch_optional(&state.db)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Agent not found".into()))?;
+
+    // Capabilities
+    let capabilities = sqlx::query_as::<_, AgentCapability>(
+        "SELECT * FROM agent_capabilities WHERE agent_id = $1"
+    )
+    .bind(id)
+    .fetch_all(&state.db)
+    .await?;
+
+    // Owner display name
+    let owner: Option<(Option<String>,)> = sqlx::query_as(
+        "SELECT display_name FROM users WHERE id = $1"
+    )
+    .bind(agent.owner_id)
+    .fetch_optional(&state.db)
+    .await?;
+    let owner_name = owner.and_then(|o| o.0);
+
+    // Review stats
+    let stats_row: Option<(i64, Option<f64>, Option<f64>, Option<f64>)> = sqlx::query_as(
+        r#"SELECT
+             COUNT(*)::bigint,
+             AVG(r.quality::float),
+             AVG(r.communication::float),
+             AVG(r.timeliness::float)
+           FROM reviews r
+           JOIN contracts c ON r.contract_id = c.id
+           WHERE c.agent_id = $1
+             AND r.reviewer_role = 'client'
+             AND r.is_hidden = false"#,
+    )
+    .bind(id)
+    .fetch_optional(&state.db)
+    .await?;
+
+    let would_work_count: (i64,) = sqlx::query_as(
+        r#"SELECT COUNT(*) FROM reviews r
+           JOIN contracts c ON r.contract_id = c.id
+           WHERE c.agent_id = $1
+             AND r.reviewer_role = 'client'
+             AND r.is_hidden = false
+             AND r.would_work_again = true"#,
+    )
+    .bind(id)
+    .fetch_one(&state.db)
+    .await
+    .unwrap_or((0,));
+
+    let (total_reviews, avg_q, avg_c, avg_t) = stats_row.unwrap_or((0, None, None, None));
+    let review_stats = ReviewStats {
+        total_reviews,
+        avg_quality: avg_q.unwrap_or(0.0),
+        avg_communication: avg_c.unwrap_or(0.0),
+        avg_timeliness: avg_t.unwrap_or(0.0),
+        would_work_again_pct: if total_reviews > 0 {
+            (would_work_count.0 as f64 / total_reviews as f64) * 100.0
+        } else {
+            0.0
+        },
+    };
+
+    // Completed jobs (last 20)
+    let contracts = sqlx::query_as::<_, Contract>(
+        r#"SELECT * FROM contracts
+           WHERE agent_id = $1 AND status = 'completed'
+           ORDER BY completed_at DESC LIMIT 20"#,
+    )
+    .bind(id)
+    .fetch_all(&state.db)
+    .await?;
+
+    let mut completed_jobs = Vec::new();
+    for contract in &contracts {
+        let job = sqlx::query_as::<_, Job>("SELECT * FROM jobs WHERE id = $1")
+            .bind(contract.job_id)
+            .fetch_optional(&state.db)
+            .await?;
+
+        let review = sqlx::query_as::<_, Review>(
+            "SELECT * FROM reviews WHERE contract_id = $1 AND reviewer_role = 'client' AND is_hidden = false"
+        )
+        .bind(contract.id)
+        .fetch_optional(&state.db)
+        .await?;
+
+        if let Some(job) = job {
+            completed_jobs.push(CompletedJob {
+                job_title: job.title,
+                job_description: job.description,
+                agreed_price_lamports: contract.agreed_price_lamports,
+                completed_at: contract.completed_at,
+                contract_id: contract.id,
+                job_id: contract.job_id,
+                review: review.map(|r| JobReviewSummary {
+                    quality: r.quality,
+                    communication: r.communication,
+                    timeliness: r.timeliness,
+                    would_work_again: r.would_work_again,
+                    comment: r.comment,
+                }),
+            });
+        }
+    }
+
+    Ok(Json(AgentProfile {
+        agent,
+        capabilities,
+        owner_name,
+        review_stats,
+        completed_jobs,
+    }))
+}
