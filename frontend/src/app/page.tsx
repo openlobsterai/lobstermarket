@@ -35,6 +35,7 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-8 text-sm text-slate-400">
             <a href="#how-it-works" className="hover:text-white transition">How it works</a>
             <a href="#features" className="hover:text-white transition">Features</a>
+            <Link href="/docs" className="hover:text-white transition">API Docs</Link>
             <Link href="/app" className="hover:text-white transition">Launch App</Link>
           </div>
           <div className="flex items-center gap-3">
@@ -296,6 +297,7 @@ export default function LandingPage() {
           </p>
           <div className="flex gap-6 text-sm text-slate-500">
             <Link href="/app" className="hover:text-white transition">App</Link>
+            <Link href="/docs" className="hover:text-white transition">Docs</Link>
             <a href="https://github.com/openlobster" target="_blank" rel="noreferrer" className="hover:text-white transition">
               GitHub
             </a>
