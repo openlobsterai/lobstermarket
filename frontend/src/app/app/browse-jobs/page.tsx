@@ -2,27 +2,61 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listJobs } from "@/lib/api";
+import { listJobs, addFavorite, removeFavorite, listFavorites } from "@/lib/api";
+import { useWallet } from "@/lib/wallet";
 import { formatLamports, formatBudget, timeAgo } from "@/lib/utils";
-import { Search, Swords, Clock, DollarSign, Tag, ArrowRight } from "lucide-react";
+import { Search, Swords, Clock, DollarSign, Tag, ArrowRight, Heart, ArrowUpDown } from "lucide-react";
+
+const SORT_OPTIONS = [
+  { value: "date", label: "Newest" },
+  { value: "budget", label: "Budget" },
+  { value: "deadline", label: "Deadline" },
+  { value: "title", label: "Title" },
+];
 
 export default function BrowseJobsPage() {
+  const { token, connected } = useWallet();
   const [jobs, setJobs] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState("date");
+  const [order, setOrder] = useState("desc");
+  const [favIds, setFavIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setLoading(true);
-    listJobs(page, 20)
+    listJobs(page, 20, sort, order)
       .then((res) => {
         setJobs(res.data);
         setTotal(res.total);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [page, sort, order]);
+
+  // Load favorites
+  useEffect(() => {
+    if (token) {
+      listFavorites(token, "job")
+        .then((favs) => setFavIds(new Set(favs.map((f: any) => f.entity_id))))
+        .catch(() => {});
+    }
+  }, [token]);
+
+  const toggleFav = async (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!token) return;
+    if (favIds.has(jobId)) {
+      await removeFavorite(token, "job", jobId).catch(() => {});
+      setFavIds((prev) => { const s = new Set(prev); s.delete(jobId); return s; });
+    } else {
+      await addFavorite(token, "job", jobId).catch(() => {});
+      setFavIds((prev) => new Set(prev).add(jobId));
+    }
+  };
 
   const filtered = jobs.filter(
     (j) =>
@@ -39,15 +73,38 @@ export default function BrowseJobsPage() {
             {total} open jobs available
           </p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search jobs…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-lobster-500 transition"
-          />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Sort */}
+          <div className="relative">
+            <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+            <select
+              value={sort}
+              onChange={(e) => { setSort(e.target.value); setPage(1); }}
+              className="pl-8 pr-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-lobster-500 transition appearance-none cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={() => setOrder(order === "desc" ? "asc" : "desc")}
+            className="px-2.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-400 hover:text-white transition"
+            title={order === "desc" ? "Descending" : "Ascending"}
+          >
+            {order === "desc" ? "↓" : "↑"}
+          </button>
+          {/* Search */}
+          <div className="relative flex-1 sm:w-56">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search jobs…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-lobster-500 transition"
+            />
+          </div>
         </div>
       </div>
 
@@ -107,7 +164,24 @@ export default function BrowseJobsPage() {
                     <span className="text-slate-600">{timeAgo(job.created_at)}</span>
                   </div>
                 </div>
-                <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-lobster-400 transition shrink-0 mt-1" />
+                <div className="flex items-center gap-1 shrink-0 mt-1">
+                  {connected && (
+                    <button
+                      onClick={(e) => toggleFav(e, job.id)}
+                      className="p-1.5 rounded-lg hover:bg-slate-700/50 transition"
+                      title={favIds.has(job.id) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Heart
+                        className={`w-4 h-4 transition ${
+                          favIds.has(job.id)
+                            ? "text-lobster-500 fill-lobster-500"
+                            : "text-slate-600 hover:text-lobster-400"
+                        }`}
+                      />
+                    </button>
+                  )}
+                  <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-lobster-400 transition" />
+                </div>
               </div>
             </Link>
           ))}

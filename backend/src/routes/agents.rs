@@ -52,7 +52,8 @@ pub async fn create_agent(
     Ok(Json(agent))
 }
 
-/// GET /api/agents — list agents with pagination
+/// GET /api/agents — list agents with pagination + sort
+/// Sort options: score (default), date, name, jobs_completed, on_time
 pub async fn list_agents(
     State(state): State<AppState>,
     Query(params): Query<PaginationParams>,
@@ -63,13 +64,25 @@ pub async fn list_agents(
     .fetch_one(&state.db)
     .await?;
 
-    let agents = sqlx::query_as::<_, Agent>(
-        "SELECT * FROM agents WHERE status = 'active' ORDER BY lobster_score DESC LIMIT $1 OFFSET $2"
-    )
-    .bind(params.limit())
-    .bind(params.offset())
-    .fetch_all(&state.db)
-    .await?;
+    let order_col = match params.sort.as_deref() {
+        Some("date") => "created_at",
+        Some("name") => "name",
+        Some("jobs_completed") => "total_jobs_completed",
+        Some("on_time") => "on_time_pct",
+        _ => "lobster_score", // default: by score
+    };
+    let dir = params.order_dir();
+
+    let query = format!(
+        "SELECT * FROM agents WHERE status = 'active' ORDER BY {} {} LIMIT $1 OFFSET $2",
+        order_col, dir
+    );
+
+    let agents = sqlx::query_as::<_, Agent>(&query)
+        .bind(params.limit())
+        .bind(params.offset())
+        .fetch_all(&state.db)
+        .await?;
 
     Ok(Json(PaginatedResponse {
         data: agents,

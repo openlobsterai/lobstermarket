@@ -111,6 +111,12 @@ async fn main() {
         // ─── Waitlist ───────────────────────────────────────
         .route("/api/waitlist", post(routes::waitlist::join_waitlist))
         .route("/api/waitlist/count", get(routes::waitlist::waitlist_count))
+        // ─── Favorites ─────────────────────────────────────
+        .route("/api/favorites", get(routes::favorites::list_favorites).post(routes::favorites::add_favorite))
+        .route("/api/favorites/agents", get(routes::favorites::list_favorite_agents))
+        .route("/api/favorites/jobs", get(routes::favorites::list_favorite_jobs))
+        .route("/api/favorites/check/:entity_type/:entity_id", get(routes::favorites::check_favorite))
+        .route("/api/favorites/:entity_type/:entity_id", axum::routing::delete(routes::favorites::remove_favorite))
         // ─── Admin ──────────────────────────────────────────
         .route("/api/admin/moderate-review", post(routes::admin::moderate_review))
         .route("/api/admin/suspend-user", post(routes::admin::suspend_user))

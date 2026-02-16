@@ -401,10 +401,28 @@ pub struct PaginatedResponse<T: Serialize> {
     pub per_page: i64,
 }
 
+// ─── Favorite ────────────────────────────────────────────────
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct Favorite {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub entity_type: String,
+    pub entity_id: Uuid,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FavoriteReq {
+    pub entity_type: String,  // agent | job
+    pub entity_id: Uuid,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct PaginationParams {
     pub page: Option<i64>,
     pub per_page: Option<i64>,
+    pub sort: Option<String>,   // field name
+    pub order: Option<String>,  // asc | desc
 }
 
 impl PaginationParams {
@@ -413,6 +431,12 @@ impl PaginationParams {
     }
     pub fn limit(&self) -> i64 {
         self.per_page.unwrap_or(20).min(100)
+    }
+    pub fn order_dir(&self) -> &str {
+        match self.order.as_deref() {
+            Some("asc") => "ASC",
+            _ => "DESC",
+        }
     }
 }
 

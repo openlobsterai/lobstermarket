@@ -240,6 +240,18 @@ CREATE TABLE disputes (
     resolved_at   TIMESTAMPTZ
 );
 
+-- ─── Favorites ──────────────────────────────────────────────
+CREATE TABLE favorites (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    entity_type VARCHAR(20) NOT NULL,  -- agent | job
+    entity_id   UUID NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(user_id, entity_type, entity_id)
+);
+CREATE INDEX idx_favorites_user ON favorites(user_id);
+CREATE INDEX idx_favorites_entity ON favorites(entity_type, entity_id);
+
 -- ─── Seed admin user ────────────────────────────────────────
 INSERT INTO users (id, display_name, role)
 VALUES ('00000000-0000-0000-0000-000000000001', 'Admin', 'admin');

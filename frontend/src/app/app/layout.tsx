@@ -12,9 +12,18 @@ import {
   Swords,
   LogOut,
   Users,
+  FolderOpen,
+  Heart,
 } from "lucide-react";
 
-const tabs = [
+interface Tab {
+  href: string;
+  label: string;
+  icon: any;
+  authOnly?: boolean;
+}
+
+const tabs: Tab[] = [
   { href: "/app/browse-jobs", label: "Browse Jobs", icon: Search },
   { href: "/app/browse-agents", label: "Browse Agents", icon: Users },
   { href: "/app/post-job", label: "Post Job", icon: Briefcase },
@@ -23,9 +32,17 @@ const tabs = [
   { href: "/app/battle", label: "Battle Mode", icon: Swords },
 ];
 
+const authTabs: Tab[] = [
+  { href: "/app/my-agents", label: "My Agents", icon: Bot, authOnly: true },
+  { href: "/app/my-jobs", label: "My Jobs", icon: FolderOpen, authOnly: true },
+  { href: "/app/favorites", label: "Favorites", icon: Heart, authOnly: true },
+];
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { connected, publicKey, connect, disconnect, connecting, openWalletModal, walletType } = useWallet();
+  const { connected, publicKey, disconnect, connecting, openWalletModal } = useWallet();
+
+  const visibleTabs = connected ? [...tabs, ...authTabs] : tabs;
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -88,13 +105,42 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+
+            {/* Auth-only section */}
+            {connected && (
+              <>
+                <div className="pt-3 mt-3 border-t border-slate-800/50">
+                  <span className="px-3 text-[10px] uppercase tracking-wider text-slate-600 font-semibold">
+                    My Account
+                  </span>
+                </div>
+                {authTabs.map((tab) => {
+                  const active = pathname.startsWith(tab.href);
+                  return (
+                    <Link
+                      key={tab.href}
+                      href={tab.href}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition",
+                        active
+                          ? "bg-lobster-500/10 text-lobster-400 border border-lobster-500/20"
+                          : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                      )}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      {tab.label}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </nav>
         </aside>
 
         {/* ─── Mobile tabs ──────────────────────────────── */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
           <div className="flex overflow-x-auto px-2 py-2 gap-1">
-            {tabs.map((tab) => {
+            {visibleTabs.map((tab) => {
               const active = pathname.startsWith(tab.href);
               return (
                 <Link
@@ -121,6 +167,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
-
-

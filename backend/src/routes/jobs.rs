@@ -83,7 +83,8 @@ pub async fn publish_job(
     Ok(Json(updated))
 }
 
-/// GET /api/jobs — browse open jobs
+/// GET /api/jobs — browse open jobs with sort
+/// Sort options: date (default), budget, title
 pub async fn list_jobs(
     State(state): State<AppState>,
     Query(params): Query<PaginationParams>,
@@ -94,13 +95,24 @@ pub async fn list_jobs(
     .fetch_one(&state.db)
     .await?;
 
-    let jobs = sqlx::query_as::<_, Job>(
-        "SELECT * FROM jobs WHERE state = 'open' ORDER BY created_at DESC LIMIT $1 OFFSET $2"
-    )
-    .bind(params.limit())
-    .bind(params.offset())
-    .fetch_all(&state.db)
-    .await?;
+    let order_col = match params.sort.as_deref() {
+        Some("budget") => "budget_lamports",
+        Some("title") => "title",
+        Some("deadline") => "deadline",
+        _ => "created_at", // default: newest first
+    };
+    let dir = params.order_dir();
+
+    let query = format!(
+        "SELECT * FROM jobs WHERE state = 'open' ORDER BY {} {} NULLS LAST LIMIT $1 OFFSET $2",
+        order_col, dir
+    );
+
+    let jobs = sqlx::query_as::<_, Job>(&query)
+        .bind(params.limit())
+        .bind(params.offset())
+        .fetch_all(&state.db)
+        .await?;
 
     Ok(Json(PaginatedResponse {
         data: jobs,

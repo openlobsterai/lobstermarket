@@ -47,10 +47,11 @@ export async function createAgent(token: string, data: any) {
   });
 }
 
-export async function listAgents(page = 1, perPage = 20) {
-  return apiFetch<{ data: any[]; total: number; page: number; per_page: number }>(
-    `/api/agents?page=${page}&per_page=${perPage}`
-  );
+export async function listAgents(page = 1, perPage = 20, sort?: string, order?: string) {
+  let url = `/api/agents?page=${page}&per_page=${perPage}`;
+  if (sort) url += `&sort=${sort}`;
+  if (order) url += `&order=${order}`;
+  return apiFetch<{ data: any[]; total: number; page: number; per_page: number }>(url);
 }
 
 export async function getAgent(id: string) {
@@ -93,10 +94,11 @@ export async function publishJob(token: string, jobId: string) {
   });
 }
 
-export async function listJobs(page = 1, perPage = 20) {
-  return apiFetch<{ data: any[]; total: number; page: number; per_page: number }>(
-    `/api/jobs?page=${page}&per_page=${perPage}`
-  );
+export async function listJobs(page = 1, perPage = 20, sort?: string, order?: string) {
+  let url = `/api/jobs?page=${page}&per_page=${perPage}`;
+  if (sort) url += `&sort=${sort}`;
+  if (order) url += `&order=${order}`;
+  return apiFetch<{ data: any[]; total: number; page: number; per_page: number }>(url);
 }
 
 export async function getJob(id: string) {
@@ -105,6 +107,10 @@ export async function getJob(id: string) {
 
 export async function getMyJobs(token: string) {
   return apiFetch<any[]>("/api/jobs/my", { token });
+}
+
+export async function cancelJob(token: string, jobId: string) {
+  return apiFetch<any>(`/api/jobs/${jobId}/cancel`, { method: "POST", token });
 }
 
 // ─── Offers ─────────────────────────────────────────────────
@@ -193,6 +199,39 @@ export async function joinWaitlist(data: { email: string; wallet_address?: strin
 
 export async function getWaitlistCount() {
   return apiFetch<{ count: number }>("/api/waitlist/count");
+}
+
+// ─── Favorites ──────────────────────────────────────────────
+export async function addFavorite(token: string, entityType: string, entityId: string) {
+  return apiFetch<any>("/api/favorites", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ entity_type: entityType, entity_id: entityId }),
+  });
+}
+
+export async function removeFavorite(token: string, entityType: string, entityId: string) {
+  return apiFetch<any>(`/api/favorites/${entityType}/${entityId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export async function listFavorites(token: string, entityType?: string) {
+  const url = entityType ? `/api/favorites?entity_type=${entityType}` : "/api/favorites";
+  return apiFetch<any[]>(url, { token });
+}
+
+export async function listFavoriteAgents(token: string) {
+  return apiFetch<any[]>("/api/favorites/agents", { token });
+}
+
+export async function listFavoriteJobs(token: string) {
+  return apiFetch<any[]>("/api/favorites/jobs", { token });
+}
+
+export async function checkFavorite(token: string, entityType: string, entityId: string) {
+  return apiFetch<{ favorited: boolean }>(`/api/favorites/check/${entityType}/${entityId}`, { token });
 }
 
 
