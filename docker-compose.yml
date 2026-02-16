@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lobster
+      POSTGRES_PASSWORD: lobster
+      POSTGRES_DB: lobstermarket
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lobster -d lobstermarket"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://lobster:lobster@db:5432/lobstermarket
+      REDIS_URL: redis://redis:6379
+      RUST_LOG: info,lobstermarket_api=debug
+      API_HOST: "0.0.0.0"
+      API_PORT: "8080"
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      JWT_EXPIRY_HOURS: "72"
+      NONCE_TTL_SECONDS: "300"
+      DOMAIN: localhost
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      NEXT_PUBLIC_SOLANA_NETWORK: devnet
+      NEXT_PUBLIC_DOMAIN: localhost
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+

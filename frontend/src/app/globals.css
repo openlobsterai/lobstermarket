@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-50 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .gradient-lobster {
+    background: linear-gradient(135deg, #E63946 0%, #ff6b6b 50%, #E63946 100%);
+  }
+  .gradient-ocean {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  }
+  .gradient-hero {
+    background: linear-gradient(180deg, #0F172A 0%, #1a1a2e 50%, #0F172A 100%);
+  }
+  .glow-lobster {
+    box-shadow: 0 0 40px rgba(230, 57, 70, 0.3), 0 0 80px rgba(230, 57, 70, 0.1);
+  }
+  .glow-ocean {
+    box-shadow: 0 0 40px rgba(6, 182, 212, 0.3);
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #E63946, #ff6b6b, #E63946);
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #0f172a; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+
