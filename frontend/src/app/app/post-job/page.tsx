@@ -23,6 +23,7 @@ export default function PostJobPage() {
   const [currencyChain, setCurrencyChain] = useState("solana");
   const [battleMode, setBattleMode] = useState(false);
   const [battleMax, setBattleMax] = useState("3");
+  const [battleMaxMode, setBattleMaxMode] = useState<"preset" | "custom" | "unlimited">("preset");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [requirements, setRequirements] = useState<string[]>([]);
@@ -62,7 +63,9 @@ export default function PostJobPage() {
         currency,
         currency_chain: currencyChain,
         battle_mode: battleMode,
-        battle_max_submissions: battleMode ? parseInt(battleMax) : undefined,
+        battle_max_submissions: battleMode
+          ? battleMaxMode === "unlimited" ? 0 : parseInt(battleMax)
+          : undefined,
         tags: tags.length > 0 ? tags : undefined,
         requirements: requirements.length > 0
           ? requirements.map((r) => ({ requirement: r, is_mandatory: true }))
@@ -201,7 +204,11 @@ export default function PostJobPage() {
         </div>
 
         {/* Battle Mode */}
-        <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+        <div className={`p-5 rounded-xl border transition ${
+          battleMode
+            ? "bg-amber-500/5 border-amber-500/20"
+            : "bg-slate-800/50 border-slate-700/50"
+        }`}>
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
@@ -215,17 +222,75 @@ export default function PostJobPage() {
             </div>
           </label>
           {battleMode && (
-            <div className="mt-3 pl-8">
-              <label className="block text-sm text-slate-400 mb-1">Max submissions</label>
-              <select
-                value={battleMax}
-                onChange={(e) => setBattleMax(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-slate-700 border border-slate-600 text-sm text-white"
-              >
-                <option value="3">3 agents</option>
-                <option value="4">4 agents</option>
-                <option value="5">5 agents</option>
-              </select>
+            <p className="text-xs text-slate-500 mt-1 pl-8">
+              Multiple agents compete — you compare and pick the winner.
+            </p>
+          )}
+          {battleMode && (
+            <div className="mt-4 pl-8 space-y-3">
+              <label className="block text-sm font-medium text-slate-300">Max submissions</label>
+
+              {/* Preset buttons */}
+              <div className="flex flex-wrap gap-2">
+                {[2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => { setBattleMaxMode("preset"); setBattleMax(String(n)); }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                      battleMaxMode === "preset" && battleMax === String(n)
+                        ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                        : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+                    }`}
+                  >
+                    {n} agents
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => { setBattleMaxMode("custom"); setBattleMax("10"); }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                    battleMaxMode === "custom"
+                      ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                      : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+                  }`}
+                >
+                  Custom
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setBattleMaxMode("unlimited"); setBattleMax("0"); }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                    battleMaxMode === "unlimited"
+                      ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                      : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+                  }`}
+                >
+                  ∞ No limit
+                </button>
+              </div>
+
+              {/* Custom input */}
+              {battleMaxMode === "custom" && (
+                <div>
+                  <input
+                    type="number"
+                    min="2"
+                    max="100"
+                    value={battleMax}
+                    onChange={(e) => setBattleMax(e.target.value)}
+                    className="w-32 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+                    placeholder="10"
+                  />
+                  <span className="ml-2 text-xs text-slate-500">agents (2–100)</span>
+                </div>
+              )}
+
+              {battleMaxMode === "unlimited" && (
+                <p className="text-xs text-amber-400/70">
+                  Any number of agents can submit — open competition.
+                </p>
+              )}
             </div>
           )}
         </div>

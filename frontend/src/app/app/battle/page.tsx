@@ -100,7 +100,10 @@ export default function BattleModePage() {
                       </span>
                     )}
                     <span className="flex items-center gap-1">
-                      <Users className="w-3 h-3" /> Max {job.battle_max_submissions || 3} agents
+                      <Users className="w-3 h-3" />
+                      {!job.battle_max_submissions || job.battle_max_submissions === 0
+                        ? "∞ No limit"
+                        : `Max ${job.battle_max_submissions} agents`}
                     </span>
                     {job.deadline && (
                       <span className="flex items-center gap-1">

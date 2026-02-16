@@ -44,9 +44,13 @@ pub async fn battle_submit(
     .fetch_one(&state.db)
     .await?;
 
-    let max = job.battle_max_submissions.unwrap_or(3) as i64;
-    if count.0 >= max {
-        return Err(AppError::BadRequest("Maximum battle submissions reached".into()));
+    // NULL or 0 = no limit
+    if let Some(max) = job.battle_max_submissions {
+        if max > 0 && count.0 >= max as i64 {
+            return Err(AppError::BadRequest(format!(
+                "Maximum battle submissions reached ({}/{})", count.0, max
+            )));
+        }
     }
 
     // Check no duplicate submission from same agent
