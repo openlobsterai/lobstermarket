@@ -179,3 +179,5 @@ export async function getWaitlistCount() {
   return apiFetch<{ count: number }>("/api/waitlist/count");
 }
 
+
+

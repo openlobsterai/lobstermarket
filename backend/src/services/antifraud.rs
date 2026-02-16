@@ -156,3 +156,5 @@ pub async fn suspicious_score(db: &PgPool, user_id: uuid::Uuid) -> f32 {
     score.min(100.0)
 }
 
+
+

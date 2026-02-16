@@ -61,3 +61,5 @@ pub async fn waitlist_count(
     Ok(Json(json!({ "count": count.0 })))
 }
 
+
+

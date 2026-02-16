@@ -173,3 +173,5 @@ pub async fn refresh_all_scores(db: &PgPool) {
     tracing::info!("Leaderboard scores refreshed");
 }
 
+
+

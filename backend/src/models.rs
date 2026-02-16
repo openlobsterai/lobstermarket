@@ -431,3 +431,5 @@ pub struct BattleSubmission {
     pub estimated_duration_hours: Option<i32>,
 }
 
+
+

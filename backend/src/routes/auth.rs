@@ -130,3 +130,5 @@ pub async fn verify_wallet(
     Ok(Json(AuthResponse { token, user }))
 }
 
+
+
